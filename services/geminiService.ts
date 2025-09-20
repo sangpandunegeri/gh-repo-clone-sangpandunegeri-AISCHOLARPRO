@@ -48,12 +48,25 @@ export const generatePreface = async (title: string, authorName: string): Promis
             4.  Paragraf penutup berisi harapan penulis atas manfaat dari karya ilmiah ini dan kesediaan menerima kritik.
 
             Gunakan tag <p> untuk setiap paragraf.
+            
+            PENTING: Respons Anda HARUS hanya berisi kode HTML untuk kata pengantar. JANGAN sertakan markdown (seperti \`\`\`html\`), penjelasan, atau teks lain di luar tag HTML yang diminta.
         `;
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
         });
-        return response.text;
+
+        let cleanedHtml = response.text.trim();
+        // Remove markdown code blocks like ```html...``` or ```...```
+        cleanedHtml = cleanedHtml.replace(/^```[a-z]*\n?/, '').replace(/\n?```$/, '').trim();
+        
+        // Also remove conversational prefixes by finding the first HTML tag.
+        const firstTagIndex = cleanedHtml.indexOf('<');
+        if (firstTagIndex > 0) {
+            cleanedHtml = cleanedHtml.substring(firstTagIndex);
+        }
+
+        return cleanedHtml.trim() || "<p>Gagal memproses respons dari AI. Coba lagi.</p>";
     } catch (error) {
         console.error("Error generating preface:", error);
         return "<p>Gagal membuat draf Kata Pengantar. Silakan coba lagi.</p>";
@@ -84,12 +97,24 @@ export const generateAbstract = async (title: string, outline: ChapterOutline): 
             - Keseluruhan abstrak harus antara 150 hingga 250 kata.
             - Gunakan bahasa Indonesia formal yang baku, presisi, dan efisien.
             - Hindari kalimat yang terlalu panjang atau berbelit-belit.
+            - PENTING: Respons Anda HARUS hanya berisi kode HTML untuk abstrak. JANGAN sertakan markdown (seperti \`\`\`html\`), penjelasan, atau teks lain di luar tag HTML yang diminta.
         `;
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
         });
-        return response.text;
+        
+        let cleanedHtml = response.text.trim();
+        // Remove markdown code blocks like ```html...``` or ```...```
+        cleanedHtml = cleanedHtml.replace(/^```[a-z]*\n?/, '').replace(/\n?```$/, '').trim();
+        
+        // Also remove conversational prefixes by finding the first HTML tag.
+        const firstTagIndex = cleanedHtml.indexOf('<');
+        if (firstTagIndex > 0) {
+            cleanedHtml = cleanedHtml.substring(firstTagIndex);
+        }
+
+        return cleanedHtml.trim() || "<p>Gagal memproses respons dari AI. Coba lagi.</p>";
     } catch (error) {
         console.error("Error generating abstract:", error);
         return "<p>Gagal membuat draf Abstrak. Silakan coba lagi.</p>";

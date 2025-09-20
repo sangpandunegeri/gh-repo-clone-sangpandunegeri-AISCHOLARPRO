@@ -53,7 +53,7 @@ const TableOfContents: React.FC<{
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(chapterContent, 'text/html');
                     const headings = doc.querySelectorAll('h2');
-                    headings.forEach(h2 => {
+                    Array.from(headings).forEach(h2 => {
                         if(h2.textContent) {
                             structure.push({ level: 2, text: h2.textContent, page: chapterPageInfo?.start ?? '', chapterKey, anchorId: h2.id });
                         }

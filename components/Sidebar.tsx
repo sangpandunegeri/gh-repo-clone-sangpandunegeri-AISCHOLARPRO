@@ -179,11 +179,18 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, setActiveC
                     if (!isUnlocked) return `Selesaikan ${chapterOptions[index - 1]} untuk membuka`;
                     return chapterName;
                 };
+                
+                const chapterClasses = isActive
+                  ? 'bg-primary text-white'
+                  : isCompleted
+                  ? 'text-teal-200 hover:bg-primary-dark'
+                  : isUnlocked
+                  ? 'hover:bg-primary-dark text-white'
+                  : 'opacity-60 text-blue-300';
+
 
                 return (
-                  <div key={chapterName} className={`rounded-lg transition-colors ${
-                      isActive ? 'bg-primary text-white' : isUnlocked ? 'hover:bg-primary-dark text-white' : 'opacity-60 text-blue-300'
-                  }`}>
+                  <div key={chapterName} className={`rounded-lg transition-colors ${chapterClasses}`}>
                     <div 
                         onClick={() => handleChapterClick(chapterName, isUnlocked)}
                         className={`flex items-center p-2 space-x-2 ${isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed'}`}
