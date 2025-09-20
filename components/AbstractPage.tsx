@@ -5,6 +5,7 @@ import Card from './common/Card';
 import SaveIcon from './icons/SaveIcon';
 import PageFooter from './common/PageFooter';
 import { useProject } from '../contexts/ProjectContext';
+import TrashIcon from './icons/TrashIcon';
 
 const Quill = (ReactQuill as any).Quill;
 
@@ -71,6 +72,12 @@ const AbstractPage: React.FC<{ pageNumber?: string | number; }> = ({ pageNumber 
         setTimeout(() => setIsSaved(false), 2000);
     };
 
+    const handleClearContent = () => {
+        if (window.confirm('Apakah Anda yakin ingin menghapus seluruh konten di halaman ini?')) {
+            setContent('<p><br></p>');
+        }
+    };
+
      const handleHumanizeParagraph = React.useCallback(async () => {
         const editor = quillRef.current?.getEditor();
         if (!editor || isHumanizing || isHumanizingCooldown) return;
@@ -130,7 +137,7 @@ const AbstractPage: React.FC<{ pageNumber?: string | number; }> = ({ pageNumber 
         <div className="max-w-4xl mx-auto space-y-8">
             <header>
                 <h1 className="text-3xl font-bold text-text-primary mb-2">Abstrak</h1>
-                <p className="text-text-secondary font-serif">AI telah membuatkan draf abstrak awal berdasarkan kerangka penelitian Anda. Anda dapat menyempurnakannya di sini.</p>
+                <p className="text-text-secondary font-serif">Sempurnakan abstrak Anda di sini atau buat draf baru berdasarkan kerangka penelitian Anda.</p>
             </header>
             
             <Card className="relative">
@@ -142,7 +149,15 @@ const AbstractPage: React.FC<{ pageNumber?: string | number; }> = ({ pageNumber 
                         onChange={handleContentChange}
                         modules={quillModules}
                     />
-                     <div className="flex justify-end mt-6 pt-6 border-t border-border">
+                     <div className="flex justify-end items-center mt-6 pt-6 border-t border-border gap-4">
+                        <button
+                            type="button"
+                            onClick={handleClearContent}
+                            className="inline-flex items-center px-4 py-2 border border-border text-sm font-medium rounded-md shadow-sm text-text-primary bg-surface hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                        >
+                            <TrashIcon className="h-5 w-5 mr-2 text-text-secondary"/>
+                            <span>Hapus Konten</span>
+                        </button>
                         <button
                             type="button"
                             onClick={handleSave}

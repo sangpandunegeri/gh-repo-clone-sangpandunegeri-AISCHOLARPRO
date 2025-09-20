@@ -66,7 +66,7 @@ const isChapterContentSufficient = (content?: string): boolean => {
 
 const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, setActiveChapter, activeChapter }) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const { projectData, startNewProject, importProject, exportProject } = useProject();
+  const { projectData, startNewProject, handleFileUpload, exportProject } = useProject();
   
   const handleChapterClick = (chapterName: string, isUnlocked: boolean) => {
       if(isUnlocked) {
@@ -82,20 +82,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, setActiveC
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const text = e.target?.result as string;
-        try {
-          importProject(text);
-        } catch (error) {
-          console.error("Error processing imported file:", error);
-          alert("Gagal memproses file. Pastikan file tersebut adalah file proyek yang valid.");
-        }
-      };
-      reader.onerror = () => {
-        alert("Gagal membaca file.");
-      };
-      reader.readAsText(file);
+      handleFileUpload(file);
     }
     // Reset input value to allow re-uploading the same file name
     if (event.target) {

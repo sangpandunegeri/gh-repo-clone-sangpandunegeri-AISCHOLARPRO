@@ -8,7 +8,7 @@ import CloseIcon from './icons/CloseIcon';
 import { useProject } from '../contexts/ProjectContext';
 
 const NewProjectForm: React.FC = () => {
-  const { createProject, importProject, isCreatingProject } = useProject();
+  const { createProject, handleFileUpload, isCreatingProject } = useProject();
   const [formData, setFormData] = React.useState({
     title: '',
     studentName: '',
@@ -21,8 +21,6 @@ const NewProjectForm: React.FC = () => {
   });
   
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const [importedFileContent, setImportedFileContent] = React.useState<string | null>(null);
-  const [importedFileName, setImportedFileName] = React.useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -41,64 +39,16 @@ const NewProjectForm: React.FC = () => {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const text = e.target?.result as string;
-        setImportedFileContent(text);
-        setImportedFileName(file.name);
-      };
-      reader.onerror = () => {
-        alert("Gagal membaca file.");
-        setImportedFileContent(null);
-        setImportedFileName(null);
-      };
-      reader.readAsText(file);
+      handleFileUpload(file);
     }
     if (event.target) {
       event.target.value = '';
     }
   };
 
-  const handlePerformImport = () => {
-    if (importedFileContent) {
-      importProject(importedFileContent);
-    }
-  };
-
-  const handleCancelImport = () => {
-    setImportedFileContent(null);
-    setImportedFileName(null);
-  };
 
   const isFormIncomplete = !formData.title || !formData.studentName || !formData.studentId || !formData.institutionName || !formData.facultyName || !formData.studyProgram || !formData.submissionYear;
 
-  const ImportButton: React.FC = () => (
-     <button
-        type="button"
-        onClick={handleImportClick}
-        className={'w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-border text-base font-medium rounded-md shadow-sm text-text-primary bg-surface hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary'}
-    >
-        <UploadIcon className="h-5 w-5 mr-2" />
-        Buka Proyek dari File
-    </button>
-  );
-
-  const ImportConfirmation: React.FC = () => (
-     <div className={'flex items-center gap-2 p-2 rounded-md bg-slate-50 border border-border w-full sm:w-auto'}>
-        <p className="text-sm text-text-secondary truncate max-w-[120px] sm:max-w-[150px]" title={importedFileName || ''}>
-            {importedFileName}
-        </p>
-        <button
-            onClick={handlePerformImport}
-            className="px-3 py-1 bg-primary text-white rounded text-sm font-medium hover:bg-primary-dark"
-        >
-            Buka
-        </button>
-        <button onClick={handleCancelImport} className="p-1 text-slate-400 hover:text-slate-600 rounded-full" title="Batal">
-            <CloseIcon className="h-4 w-4" />
-        </button>
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -155,9 +105,14 @@ const NewProjectForm: React.FC = () => {
             </div>
             
             <div className="pt-4 border-t border-border flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
-                <div className="w-full sm:w-auto">
-                    {importedFileName ? <ImportConfirmation /> : <ImportButton />}
-                </div>
+                <button
+                    type="button"
+                    onClick={handleImportClick}
+                    className={'w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-border text-base font-medium rounded-md shadow-sm text-text-primary bg-surface hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary'}
+                >
+                    <UploadIcon className="h-5 w-5 mr-2" />
+                    Buka Proyek dari File
+                </button>
                  <div className="flex flex-col sm:flex-row items-center gap-4">
                      <select
                         id="academicLevel"

@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { ProjectData, AuthorInfo } from '../types';
 import { initializeNewProject } from '../services/geminiService';
-import { initialProjectData } from '../src/data/initialProject';
 
 // --- Helper to get initial data ---
 const getInitialData = (): ProjectData | null => {
@@ -21,10 +20,12 @@ const getInitialData = (): ProjectData | null => {
                 return parsedProject;
             }
         }
-        return initialProjectData;
+        // If there is no project in localStorage, or if it's invalid, return null to start fresh.
+        return null;
     } catch (error) {
-        console.error("Failed to load project from localStorage, using initial data:", error);
-        return initialProjectData;
+        console.error("Failed to load project from localStorage, starting fresh:", error);
+        // On any error, also return null to ensure a clean start.
+        return null;
     }
 };
 
@@ -33,15 +34,19 @@ const getInitialData = (): ProjectData | null => {
 interface ProjectContextType {
     projectData: ProjectData | null;
     isCreatingProject: boolean;
+    isImportModalOpen: boolean;
+    importPreview: ProjectData | null;
+    importError: string | null;
     onProjectUpdate: (newData: ProjectData) => void;
     startNewProject: () => void;
     createProject: (formData: AuthorInfo & { title: string; academicLevel: string }) => Promise<void>;
-    importProject: (fileContent: string) => void;
+    importProject: (data: ProjectData) => void;
     exportProject: () => void;
-    loadProject: (data: ProjectData) => void;
     isHumanizingCooldown: boolean;
     startHumanizingCooldown: () => void;
     activateProject: (key: string) => boolean;
+    handleFileUpload: (file: File) => void;
+    closeImportModal: () => void;
 }
 
 // --- Context Creation ---
@@ -53,6 +58,11 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [projectData, setProjectData] = useState<ProjectData | null>(getInitialData);
     const [isCreatingProject, setIsCreatingProject] = useState(false);
     const [isHumanizingCooldown, setIsHumanizingCooldown] = useState(false);
+    
+    // State for Import Modal
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [importPreview, setImportPreview] = useState<ProjectData | null>(null);
+    const [importError, setImportError] = useState<string | null>(null);
 
     const validKeys = new Set([
         'SPN-CgbInU4mmneUddLHFI0vtWueQTDBMZpQ', 'SPN-AHU6wZNqIQfwpoj78bgf3GrNTgKEEK1u',
@@ -74,10 +84,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setProjectData(newProjectData);
     }, []);
     
-    const loadProject = useCallback((data: ProjectData) => {
-        setProjectData(data);
-    }, []);
-
     const startNewProject = useCallback(() => {
         if (window.confirm('Apakah Anda yakin ingin memulai proyek baru? Semua progres akan dihapus.')) {
             localStorage.removeItem('academicProject'); // Clear storage
@@ -117,39 +123,60 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return false;
     };
 
-    const importProject = useCallback((fileContent: string) => {
-         const performImport = () => {
-             try {
-                const importedData = JSON.parse(fileContent);
-                if (importedData.title && importedData.outline && importedData.chapters && importedData.authorInfo) {
-                    // Add compatibility checks for new fields
-                    if (!importedData.bibliography) importedData.bibliography = [];
-                    if (!importedData.appendices) importedData.appendices = [];
-                    if (!importedData.statementPageData) importedData.statementPageData = null;
-                    if (!importedData.approvalData) importedData.approvalData = null;
-                    if (!importedData.preface) importedData.preface = '<p>Kata Pengantar belum dibuat.</p>';
-                    if (!importedData.abstract) importedData.abstract = '<p>Abstrak belum dibuat.</p>';
-                    if (importedData.isActivated === undefined) importedData.isActivated = false;
+    const closeImportModal = () => {
+        setIsImportModalOpen(false);
+        setImportPreview(null);
+        setImportError(null);
+    };
 
-                    setProjectData(importedData);
-                    alert('Proyek berhasil diimpor!');
+    const handleFileUpload = (file: File) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const text = e.target?.result as string;
+            try {
+                const importedData = JSON.parse(text);
+                // Basic validation
+                if (importedData.title && importedData.authorInfo && importedData.outline && importedData.chapters) {
+                    setImportPreview(importedData);
+                    setImportError(null);
+                    setIsImportModalOpen(true);
                 } else {
-                    throw new Error('Struktur file tidak valid atau file rusak.');
+                    throw new Error('Struktur file tidak valid. Pastikan file berisi data proyek yang lengkap.');
                 }
             } catch (error) {
-                console.error("Failed to import project:", error);
-                alert(`Gagal mengimpor proyek. Pastikan file JSON valid dan berasal dari aplikasi ini. Error: ${(error as Error).message}`);
+                setImportPreview(null);
+                setImportError(`Gagal mem-parsing file. ${(error as Error).message}`);
+                setIsImportModalOpen(true);
             }
         };
-        
-        if (projectData) {
-             if (window.confirm('Mengimpor proyek baru akan menimpa pekerjaan Anda saat ini. Lanjutkan?')) {
-                performImport();
-            }
-        } else {
-             performImport();
+        reader.onerror = () => {
+            setImportPreview(null);
+            setImportError("Terjadi kesalahan saat membaca file.");
+            setIsImportModalOpen(true);
+        };
+        reader.readAsText(file);
+    };
+
+    const importProject = useCallback((dataToImport: ProjectData) => {
+        try {
+            // Add compatibility checks for potentially missing fields in older project files
+            if (!dataToImport.bibliography) dataToImport.bibliography = [];
+            if (!dataToImport.appendices) dataToImport.appendices = [];
+            if (!dataToImport.statementPageData) dataToImport.statementPageData = null;
+            if (!dataToImport.approvalData) dataToImport.approvalData = null;
+            if (!dataToImport.preface) dataToImport.preface = '<p>Kata Pengantar belum dibuat.</p>';
+            if (!dataToImport.abstract) dataToImport.abstract = '<p>Abstrak belum dibuat.</p>';
+            if (dataToImport.isActivated === undefined) dataToImport.isActivated = false;
+
+            setProjectData(dataToImport);
+            closeImportModal();
+            alert('Proyek berhasil diimpor!');
+        } catch (error) {
+            console.error("Failed to finalize import:", error);
+            closeImportModal();
+            alert(`Gagal mengimpor proyek. Error: ${(error as Error).message}`);
         }
-    }, [projectData]);
+    }, []);
 
     const exportProject = useCallback(() => {
         if (!projectData) {
@@ -178,15 +205,19 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const value: ProjectContextType = {
         projectData,
         isCreatingProject,
+        isImportModalOpen,
+        importPreview,
+        importError,
         onProjectUpdate,
         startNewProject,
         createProject,
         importProject,
         exportProject,
-        loadProject,
         isHumanizingCooldown,
         startHumanizingCooldown,
         activateProject,
+        handleFileUpload,
+        closeImportModal,
     };
 
     return (

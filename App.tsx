@@ -17,6 +17,7 @@ import TableOfContents from './components/TableOfContents';
 import { calculatePageNumbers } from './services/pageNumberingService';
 import { useProject } from './contexts/ProjectContext';
 import PlagiarismChecker from './components/PlagiarismChecker';
+import ImportPreviewModal from './components/ImportPreviewModal';
 
 const chapterOptions = [
     'BAB I PENDAHULUAN',
@@ -97,27 +98,35 @@ const App: React.FC = () => {
 
 
     if (!projectData) {
-        return <NewProjectForm />;
+        return (
+            <>
+                <NewProjectForm />
+                <ImportPreviewModal />
+            </>
+        );
     }
 
     return (
-        <div className="flex h-screen font-sans bg-background text-text-primary">
-            <Sidebar
-                activeView={activeView}
-                setActiveView={setActiveView}
-                setActiveChapter={setActiveChapter}
-                activeChapter={activeChapter}
-            />
-            <main className="flex-1 p-6 sm:p-8 md:p-10 overflow-y-auto">
-                <MainContent
+        <>
+            <div className="flex h-screen font-sans bg-background text-text-primary">
+                <Sidebar
                     activeView={activeView}
-                    activeChapter={activeChapter}
-                    setActiveChapter={setActiveChapter}
                     setActiveView={setActiveView}
-                    pageInfo={pageInfo}
+                    setActiveChapter={setActiveChapter}
+                    activeChapter={activeChapter}
                 />
-            </main>
-        </div>
+                <main className="flex-1 p-6 sm:p-8 md:p-10 overflow-y-auto">
+                    <MainContent
+                        activeView={activeView}
+                        activeChapter={activeChapter}
+                        setActiveChapter={setActiveChapter}
+                        setActiveView={setActiveView}
+                        pageInfo={pageInfo}
+                    />
+                </main>
+            </div>
+            <ImportPreviewModal />
+        </>
     );
 };
 
