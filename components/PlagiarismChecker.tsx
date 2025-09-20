@@ -1,5 +1,5 @@
 import React from 'react';
-import { paraphraseText, checkGrammar, checkSimilarity } from '../services/geminiService';
+import { humanizeText, checkGrammar, checkSimilarity } from '../services/geminiService';
 import { SimilarityResult } from '../types';
 import Card from './common/Card';
 import LoadingSpinner from './common/LoadingSpinner';
@@ -25,7 +25,7 @@ const PlagiarismChecker: React.FC = () => {
       let apiResult: string | SimilarityResult;
       switch (activeTool) {
         case 'paraphrase':
-          apiResult = await paraphraseText(inputText);
+          apiResult = await humanizeText(inputText);
           break;
         case 'grammar':
           apiResult = await checkGrammar(inputText);

@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactQuill from 'react-quill';
-import { generateChapter, humanizeText } from '../services/geminiService';
-import { ActiveView, ProjectData } from '../types';
+import { generateChapter, humanizeText, checkSimilarity } from '../services/geminiService';
+import { ActiveView, ProjectData, SimilarityResult } from '../types';
 import Card from './common/Card';
 import LoadingSpinner from './common/LoadingSpinner';
 import SparklesIcon from './icons/SparklesIcon';
@@ -10,6 +10,8 @@ import CheckCircleIcon from './icons/CheckCircleIcon';
 import { useProject } from '../contexts/ProjectContext';
 import ResearchOutlineForm from './ResearchOutlineForm';
 import ActivationModal from './ActivationModal';
+import ShieldCheckIcon from './icons/ShieldCheckIcon';
+import CloseIcon from './icons/CloseIcon';
 
 const Quill = (ReactQuill as any).Quill;
 
@@ -48,6 +50,8 @@ const ChapterGenerator: React.FC<ChapterGeneratorProps> = ({ activeChapter, setA
   const [loadingMessage, setLoadingMessage] = React.useState(loadingMessages[0]);
   const [isParagraphHumanizing, setIsParagraphHumanizing] = React.useState(false);
   const [showActivationModal, setShowActivationModal] = React.useState(false);
+  const [isCheckingSimilarity, setIsCheckingSimilarity] = React.useState(false);
+  const [similarityResult, setSimilarityResult] = React.useState<SimilarityResult | null>(null);
 
 
   // Local state for chapter-specific settings and editor content
@@ -64,6 +68,7 @@ const ChapterGenerator: React.FC<ChapterGeneratorProps> = ({ activeChapter, setA
   // Sync editor content when props change
   React.useEffect(() => {
     setGeneratedContent(projectData?.chapters[activeChapter] || '');
+    setSimilarityResult(null); // Reset similarity results when chapter changes
   }, [projectData, activeChapter]);
 
   React.useEffect(() => {
@@ -174,7 +179,7 @@ const ChapterGenerator: React.FC<ChapterGeneratorProps> = ({ activeChapter, setA
                 [{ 'align': [] }],
                 ['link'],
                 ['clean'],
-                [{ 'humanize': 'humanize' }] // Custom button
+                'humanize' // Custom button
             ],
             handlers: {
                 'humanize': handleHumanizeParagraph
@@ -272,6 +277,31 @@ const ChapterGenerator: React.FC<ChapterGeneratorProps> = ({ activeChapter, setA
     setTimeout(() => setIsSaved(false), 2000);
   };
   
+    const handleCheckSimilarity = async () => {
+        if (!generatedContent.trim()) {
+            alert("Tidak ada konten untuk diperiksa.");
+            return;
+        }
+        setIsCheckingSimilarity(true);
+        setSimilarityResult(null);
+        try {
+            // Strip HTML tags for accurate similarity checking
+            const plainText = generatedContent.replace(/<[^>]*>/g, '');
+            if (!plainText.trim()) {
+                alert("Konten tidak mengandung teks yang dapat diperiksa.");
+                return;
+            }
+            const result = await checkSimilarity(plainText);
+            setSimilarityResult(result);
+        } catch (error) {
+            console.error("Error checking similarity:", error);
+            alert(`Gagal memeriksa kesamaan: ${(error as Error).message}`);
+        } finally {
+            setIsCheckingSimilarity(false);
+        }
+    };
+
+
   const isFormIncomplete = !projectData || minReferences <= 0 || minCharacters <= 0;
 
   if (!projectData) {
@@ -395,14 +425,21 @@ const ChapterGenerator: React.FC<ChapterGeneratorProps> = ({ activeChapter, setA
                 onChange={setGeneratedContent}
                 modules={quillModules}
               />
-               <div className="flex justify-end mt-4 pt-4 border-t border-border">
-                  <div className="flex items-center">
+               <div className="flex justify-end items-center mt-4 pt-4 border-t border-border gap-4">
                     {isSaved && (
-                        <div className="flex items-center text-green-600 mr-4 transition-opacity duration-300 animate-fade-in-down">
+                        <div className="flex items-center text-green-600 mr-auto transition-opacity duration-300 animate-fade-in-down">
                             <CheckCircleIcon className="h-5 w-5 mr-1" />
                             <span className="text-sm font-medium">Tersimpan!</span>
                         </div>
                     )}
+                    <button
+                        onClick={handleCheckSimilarity}
+                        disabled={isCheckingSimilarity}
+                        className="inline-flex items-center px-4 py-2 border border-border text-sm font-medium rounded-md shadow-sm text-text-primary bg-surface hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:bg-slate-300 disabled:cursor-not-allowed"
+                    >
+                         {isCheckingSimilarity ? <LoadingSpinner size="h-5 w-5" color="text-primary"/> : <ShieldCheckIcon className="h-5 w-5 mr-2 text-primary" />}
+                        {isCheckingSimilarity ? 'Mengecek...' : 'Cek Orisinalitas'}
+                    </button>
                     <button
                         onClick={handleSaveChanges}
                         className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-primary hover:bg-primary-dark focus:ring-primary`}
@@ -410,7 +447,6 @@ const ChapterGenerator: React.FC<ChapterGeneratorProps> = ({ activeChapter, setA
                         <SaveIcon className="h-5 w-5 mr-2"/>
                         Simpan Perubahan
                     </button>
-                  </div>
                 </div>
               </>
             )}
@@ -421,6 +457,63 @@ const ChapterGenerator: React.FC<ChapterGeneratorProps> = ({ activeChapter, setA
             </div>
            )}
         </Card>
+      )}
+
+      {(isCheckingSimilarity || similarityResult) && (
+          <Card className="animate-fade-in-down">
+              <div className="p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold text-text-primary">Hasil Cek Orisinalitas</h2>
+                    {!isCheckingSimilarity && (
+                        <button onClick={() => setSimilarityResult(null)} className="p-1 rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-600" title="Tutup">
+                            <CloseIcon className="h-5 w-5" />
+                        </button>
+                    )}
+                  </div>
+                  {isCheckingSimilarity ? (
+                      <div className="flex flex-col items-center justify-center text-center text-text-secondary py-10">
+                          <LoadingSpinner size="h-8 w-8" color="text-primary" />
+                          <p className="mt-4 font-serif">Membandingkan naskah dengan sumber online...</p>
+                      </div>
+                  ) : (
+                      similarityResult && (() => {
+                          const percentage = similarityResult.similarity_percentage;
+                          const progressColor = percentage > 60 ? 'bg-red-500' : percentage > 30 ? 'bg-amber-500' : 'bg-green-500';
+                          return (
+                              <div className="space-y-4">
+                                  <p className="font-serif text-text-primary">{similarityResult.summary}</p>
+                                  <div className="w-full bg-slate-200 rounded-full h-4">
+                                      <div
+                                          className={`${progressColor} h-4 rounded-full transition-all duration-500`}
+                                          style={{ width: `${percentage}%` }}
+                                      ></div>
+                                  </div>
+                                  <p className="text-right text-lg font-bold text-text-primary">{percentage.toFixed(2)}% Perkiraan Kesamaan</p>
+                                  {similarityResult.sources.length > 0 && (
+                                      <div>
+                                          <h4 className="font-semibold text-text-primary mb-2">Sumber Teridentifikasi:</h4>
+                                          <ul className="list-disc list-inside space-y-2 font-serif">
+                                              {similarityResult.sources.map((source, index) => (
+                                                  <li key={index}>
+                                                      <a href={source.uri} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                                          {source.title}
+                                                      </a>
+                                                  </li>
+                                              ))}
+                                          </ul>
+                                      </div>
+                                  )}
+                                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-md mt-4">
+                                      <p className="text-sm text-blue-800 font-serif">
+                                          <strong>Tips:</strong> Jika persentase kesamaan tinggi, gunakan tombol <strong>Humanize</strong> (ikon orang) di editor di atas untuk memparafrasekan paragraf yang relevan.
+                                      </p>
+                                  </div>
+                              </div>
+                          );
+                      })()
+                  )}
+              </div>
+          </Card>
       )}
     </div>
   );

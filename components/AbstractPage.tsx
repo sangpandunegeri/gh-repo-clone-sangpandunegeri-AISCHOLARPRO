@@ -114,7 +114,7 @@ const AbstractPage: React.FC<{ pageNumber?: string | number; }> = ({ pageNumber 
                 [{ 'align': [] }],
                 ['link'],
                 ['clean'],
-                [{ 'humanize': 'humanize' }]
+                'humanize'
             ],
             handlers: {
                 'humanize': handleHumanizeParagraph

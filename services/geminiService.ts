@@ -747,20 +747,6 @@ export const generateThinkingFrameworkChart = async (description: string): Promi
   }
 };
 
-export const paraphraseText = async (text: string): Promise<string> => {
-    try {
-        const prompt = `Paraphrase the following text while keeping the meaning intact. Make it fluent, natural, and plagiarism-free: "${text}"`;
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt
-        });
-        return response.text.trim();
-    } catch (error) {
-        console.error("Error paraphrasing text:", error);
-        throw new Error("Gagal memparafrasekan teks. Silakan coba lagi.");
-    }
-};
-
 export const checkGrammar = async (text: string): Promise<string> => {
     try {
         const prompt = `
