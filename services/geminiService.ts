@@ -1,7 +1,5 @@
-
-
 import { GoogleGenAI, Type } from "@google/genai";
-import { StatisticSuggestion, ChartData, BibliographyItem as ProjectBibliographyItem, AuthorInfo, ProjectData } from '../types';
+import { StatisticSuggestion, ChartData, BibliographyItem as ProjectBibliographyItem, AuthorInfo, ProjectData, SimilarityResult } from '../types';
 
 if (!process.env.API_KEY) {
   throw new Error("API_KEY environment variable not set");
@@ -562,12 +560,36 @@ export const humanizeText = async (text: string): Promise<string> => {
       model: 'gemini-2.5-flash',
       contents: prompt
     });
-    return response.text;
+    
+    // The model can sometimes wrap the response in markdown or quotes.
+    // We need to clean it to get the raw text.
+    let cleanedText = response.text.trim();
+    
+    // More robustly remove markdown code blocks like ```text...``` or ```...```
+    cleanedText = cleanedText.replace(/^```[a-z]*\n?/, '').replace(/\n?```$/, '').trim();
+
+    // Remove surrounding quotes if they exist
+    if ((cleanedText.startsWith('"') && cleanedText.endsWith('"')) || (cleanedText.startsWith("'") && cleanedText.endsWith("'"))) {
+        cleanedText = cleanedText.substring(1, cleanedText.length - 1);
+    }
+    
+    cleanedText = cleanedText.trim();
+
+    if (!cleanedText) {
+        throw new Error("Gagal memparafrasekan teks: AI mengembalikan hasil kosong.");
+    }
+    
+    return cleanedText;
   } catch (error) {
     console.error("Error humanizing text:", error);
-    if (error instanceof Error && (error.message.includes('429') || error.message.toLowerCase().includes('quota'))) {
-        throw new Error("Batas permintaan API tercapai. Silakan coba lagi setelah beberapa saat.");
+    if (error instanceof Error) {
+        if (error.message.includes('429') || error.message.toLowerCase().includes('quota')) {
+            throw new Error("Batas permintaan API tercapai. Silakan coba lagi setelah beberapa saat.");
+        }
+        // Propagate other errors, including our custom one
+        throw error;
     }
+    // Fallback for non-Error objects
     throw new Error("Gagal memparafrasekan teks. Silakan coba lagi.");
   }
 };
@@ -723,4 +745,97 @@ export const generateThinkingFrameworkChart = async (description: string): Promi
     console.error("Error generating thinking framework chart data:", error);
     throw new Error("Gagal membuat data bagan kerangka pemikiran. Coba lagi dengan deskripsi yang lebih jelas.");
   }
+};
+
+export const paraphraseText = async (text: string): Promise<string> => {
+    try {
+        const prompt = `Paraphrase the following text while keeping the meaning intact. Make it fluent, natural, and plagiarism-free: "${text}"`;
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt
+        });
+        return response.text.trim();
+    } catch (error) {
+        console.error("Error paraphrasing text:", error);
+        throw new Error("Gagal memparafrasekan teks. Silakan coba lagi.");
+    }
+};
+
+export const checkGrammar = async (text: string): Promise<string> => {
+    try {
+        const prompt = `
+            Periksa kesalahan tata bahasa dalam teks berikut dan sarankan koreksi.
+            Gunakan bahasa Indonesia untuk penjelasan.
+            Format output Anda sebagai HTML. Tandai teks yang dihapus dengan tag <del> dan teks yang ditambahkan atau diperbaiki dengan tag <strong>.
+            Jika tidak ada kesalahan, kembalikan pesan "Tidak ada kesalahan tata bahasa yang ditemukan."
+
+            Teks untuk diperiksa: "${text}"
+        `;
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt
+        });
+        return response.text.trim();
+    } catch (error) {
+        console.error("Error checking grammar:", error);
+        throw new Error("Gagal memeriksa tata bahasa. Silakan coba lagi.");
+    }
+};
+
+export const checkSimilarity = async (text: string): Promise<SimilarityResult> => {
+    try {
+        const prompt = `
+            Anda adalah alat pemeriksa plagiarisme yang canggih. Tugas Anda adalah menganalisis teks berikut dan memperkirakan persentase kesamaannya dengan sumber-sumber yang ada di web menggunakan Google Search.
+
+            Teks untuk dianalisis:
+            "${text}"
+
+            Format output Anda HARUS berupa objek JSON string yang valid, tanpa markdown.
+        `;
+        
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                tools: [{ googleSearch: {} }],
+                responseMimeType: "application/json",
+                responseSchema: {
+                  type: Type.OBJECT,
+                  properties: {
+                    "similarity_percentage": { 
+                        type: Type.NUMBER,
+                        description: "Angka (0-100) yang merepresentasikan perkiraan persentase kesamaan."
+                    },
+                    "summary": { 
+                        type: Type.STRING,
+                        description: "Penjelasan singkat (satu atau dua kalimat) tentang temuan Anda. Jelaskan apakah teks tersebut kemungkinan besar orisinal atau memiliki banyak kesamaan dengan sumber lain."
+                    },
+                    "sources": {
+                      type: Type.ARRAY,
+                      description: "Array objek yang berisi sumber-sumber paling relevan yang Anda temukan. Gunakan array kosong jika tidak ada sumber signifikan yang ditemukan.",
+                      items: {
+                        type: Type.OBJECT,
+                        properties: {
+                          "title": { type: Type.STRING },
+                          "uri": { type: Type.STRING }
+                        },
+                        required: ["title", "uri"]
+                      }
+                    }
+                  },
+                  required: ["similarity_percentage", "summary", "sources"]
+                }
+            }
+        });
+
+        const parsedJson = JSON.parse(response.text);
+        // Additional validation
+        if (typeof parsedJson.similarity_percentage !== 'number' || typeof parsedJson.summary !== 'string' || !Array.isArray(parsedJson.sources)) {
+            throw new Error("Struktur respons JSON dari AI tidak valid.");
+        }
+        return parsedJson as SimilarityResult;
+    } catch (error) {
+        console.error("Error checking similarity:", error);
+        throw new Error("Gagal memeriksa kesamaan teks. Silakan coba lagi.");
+    }
 };

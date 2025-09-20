@@ -14,6 +14,7 @@ import DocumentCheckIcon from './icons/DocumentCheckIcon';
 import DocumentTextIcon from './icons/DocumentTextIcon';
 import ChartBarIcon from './icons/ChartBarIcon';
 import { useProject } from '../contexts/ProjectContext';
+import ShieldCheckIcon from './icons/ShieldCheckIcon';
 
 
 const frontMatterItems = [
@@ -43,6 +44,7 @@ const mainContentItems = [
 const utilityItems = [
     { view: ActiveView.Stats, icon: <CalculatorIcon />, label: 'Asisten Statistik' },
     { view: ActiveView.ThinkingFrameworkVisualizer, icon: <ChartBarIcon />, label: 'Visualisasi Kerangka' },
+    { view: ActiveView.PlagiarismChecker, icon: <ShieldCheckIcon />, label: 'Cek Orisinalitas' },
     { view: ActiveView.FormattingGuide, icon: <RulerIcon />, label: 'Panduan Format' },
 ];
 

@@ -16,6 +16,7 @@ import ThinkingFrameworkVisualizer from './components/ThinkingFrameworkVisualize
 import TableOfContents from './components/TableOfContents';
 import { calculatePageNumbers } from './services/pageNumberingService';
 import { useProject } from './contexts/ProjectContext';
+import PlagiarismChecker from './components/PlagiarismChecker';
 
 const chapterOptions = [
     'BAB I PENDAHULUAN',
@@ -65,6 +66,8 @@ const MainContent: React.FC<{
             return <FormattingGuide />;
         case ActiveView.ThinkingFrameworkVisualizer:
             return <ThinkingFrameworkVisualizer />;
+        case ActiveView.PlagiarismChecker:
+            return <PlagiarismChecker />;
         
         default:
             return <TitlePage pageNumber={pageInfo[ActiveView.TitlePage]?.start} />;

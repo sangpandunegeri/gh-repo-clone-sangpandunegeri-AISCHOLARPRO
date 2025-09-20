@@ -11,6 +11,7 @@ export enum ActiveView {
   Appendices = 'APPENDICES',
   FormattingGuide = 'FORMATTING_GUIDE',
   ThinkingFrameworkVisualizer = 'THINKING_FRAMEWORK_VISUALIZER',
+  PlagiarismChecker = 'PLAGIARISM_CHECKER',
 }
 
 export interface AuthorInfo {
@@ -100,3 +101,12 @@ export interface PageInfoDetail {
 }
 
 export type PageInfo = Record<string, PageInfoDetail>;
+
+export interface SimilarityResult {
+  similarity_percentage: number;
+  summary: string;
+  sources: {
+    title: string;
+    uri: string;
+  }[];
+}
