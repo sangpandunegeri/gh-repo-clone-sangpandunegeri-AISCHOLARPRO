@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-T" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Scholar Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/react-quill@2.0.0/dist/quill.snow.css" />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              serif: ['"Times New Roman"', 'Times', 'serif'],
+            },
+            colors: {
+              'primary': {
+                'DEFAULT': '#1D4ED8', // Blue-600
+                'dark': '#1E40AF',    // Blue-700
+                'darkest': '#1E3A8A'  // Blue-800
+              },
+              'secondary': '#93C5FD', // Blue-300
+              'accent': {
+                'DEFAULT': '#F59E0B', // Amber-500
+                'dark': '#D97706'     // Amber-600
+              },
+              'background': '#F1F5F9', // Slate-100
+              'surface': '#FFFFFF',
+              'text': {
+                'primary': '#1E293B',   // Slate-800
+                'secondary': '#475569', // Slate-600
+              },
+              'border': '#CBD5E1' // Slate-300
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      .ql-editor {
+        font-family: "Times New Roman", Times, serif;
+        font-size: 12pt; /* Standar skripsi (~16px) */
+        line-height: 2;  /* Spasi ganda */
+        color: #1E293B; /* text-primary */
+        min-height: 250px;
+      }
+      .ql-editor h2 {
+          font-size: 1.5rem; /* ~24px */
+          font-weight: 700;
+          margin-top: 2.5rem; /* Jarak dari konten sebelumnya (~4 spasi) */
+          margin-bottom: 1.5rem; /* Jarak ke konten sesudahny (~3 spasi) */
+          padding-bottom: 0.3em;
+          border-bottom: 1px solid #E2E8F0; /* Slate-200 */
+      }
+      .ql-editor h3 {
+          font-size: 1.25rem; /* ~20px */
+          font-weight: 600;
+          margin-top: 2rem;
+          margin-bottom: 1rem;
+      }
+      .ql-editor p, .ql-editor ul, .ql-editor ol {
+          margin-bottom: 0; /* Biarkan line-height mengatur jarak */
+      }
+      .ql-editor a {
+        color: #1D4ED8; /* primary */
+        text-decoration: underline;
+      }
+      .ql-editor blockquote {
+        border-left: 4px solid #93C5FD; /* secondary */
+        padding-left: 1rem;
+        color: #475569; /* text-secondary */
+        font-style: italic;
+      }
+      .ql-toolbar {
+          border-radius: 8px 8px 0 0 !important;
+          border-color: #CBD5E1 !important; /* border */
+          background-color: #F8FAFC; /* Slate-50 */
+      }
+      .ql-container {
+            border-radius: 0 0 8px 8px !important;
+            border-color: #CBD5E1 !important; /* border */
+      }
+       /* Custom styles for the humanize button */
+      .ql-toolbar button.ql-humanize {
+        width: 28px;
+        height: 24px;
+        padding: 2px 4px;
+      }
+      .ql-toolbar button.ql-humanize svg {
+          width: 100%;
+          height: 100%;
+      }
+      .ql-toolbar button.ql-humanize:hover {
+          background-color: #e5e7eb; /* bg-gray-200 */
+      }
+      @keyframes fade-in-down {
+          0% {
+              opacity: 0;
+              transform: translateY(-10px);
+          }
+          100% {
+              opacity: 1;
+              transform: translateY(0);
+          }
+      }
+      .animate-fade-in-down {
+          animation: fade-in-down 0.5s ease-out forwards;
+      }
+      /* Style for the app title in the sidebar */
+      aside h1 {
+        font-family: 'Inter', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^18.2.0/",
+    "react": "https://aistudiocdn.com/react@^18.2.0",
+    "react/jsx-runtime": "https://aistudiocdn.com/react@^18.2.0/jsx-runtime",
+    "react-dom/client": "https://aistudiocdn.com/react-dom@^18.2.0/client",
+    "react-dom": "https://aistudiocdn.com/react-dom@^18.2.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^18.2.0/",
+    "react-dropzone": "https://aistudiocdn.com/react-dropzone@^14.2.3",
+    "react-quill": "https://aistudiocdn.com/react-quill@^2.0.0",
+    "recharts": "https://aistudiocdn.com/recharts@^2.12.7"
+  }
+}
+</script>
+</head>
+  <body class="bg-background">
+    <div id="root"></div>
+  </body>
+</html>

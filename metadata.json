@@ -1,0 +1,5 @@
+{
+  "name": "AIScholarPro",
+  "description": "Aplikasi AI untuk membantu penyusunan skripsi, tesis, dan disertasi sesuai standar penulisan karya tulis Indonesia. Dilengkapi dengan generator bab, rekomendasi formula statistik, dan pemformat daftar pustaka.",
+  "requestFramePermissions": []
+}
